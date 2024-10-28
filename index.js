@@ -25,18 +25,14 @@ if (!config.youtubeApiKey) {
   throw new Error("YOUTUBE_API_KEY environment variable is required");
 }
 
-// Configure logger
+// Configure logger for console logging
 const logger = winston.createLogger({
   level: config.nodeEnv === "development" ? "debug" : "info",
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.json()
   ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: "error.log", level: "error" }),
-    new winston.transports.File({ filename: "combined.log" }),
-  ],
+  transports: [new winston.transports.Console()],
 });
 
 // Initialize Express app
@@ -64,7 +60,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Request logging
+// Request logging with morgan
 app.use(
   morgan("combined", {
     stream: { write: (message) => logger.info(message.trim()) },
@@ -218,6 +214,7 @@ async function parseVideoHandler(req, res) {
     if (!videoId) {
       return res.status(400).json({
         success: false,
+        status: 400,
         message: "Invalid YouTube URL",
         code: "INVALID_URL",
       });
@@ -225,8 +222,9 @@ async function parseVideoHandler(req, res) {
 
     const videoData = await YouTubeService.checkVideoAccessibility(videoId);
 
-    res.json({
+    res.status(200).json({
       success: true,
+      status: 200,
       data: {
         videoId,
         ...videoData,
@@ -237,6 +235,7 @@ async function parseVideoHandler(req, res) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
+        status: 400,
         message: "Validation error",
         errors: error.errors,
       });
@@ -245,6 +244,7 @@ async function parseVideoHandler(req, res) {
     if (error instanceof YouTubeError) {
       return res.status(error.status).json({
         success: false,
+        status: error.status,
         message: error.message,
         code: error.code,
       });
@@ -257,6 +257,7 @@ async function parseVideoHandler(req, res) {
 
     res.status(500).json({
       success: false,
+      status: 500,
       message:
         config.nodeEnv === "development"
           ? error.message
@@ -267,13 +268,13 @@ async function parseVideoHandler(req, res) {
 }
 
 // Routes
-app.get("/parse-video", parseVideoHandler);
 app.post("/parse-video", parseVideoHandler);
 
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
+    status: 404,
     message: "Route not found",
     code: "ROUTE_NOT_FOUND",
   });
@@ -288,23 +289,18 @@ app.use((err, req, res, next) => {
 
   res.status(500).json({
     success: false,
+    status: 500,
     message:
       config.nodeEnv === "development" ? err.message : "Internal server error",
     code: "INTERNAL_ERROR",
   });
 });
 
-// Start server
-app.listen(config.port, () => {
+// Start server and store reference for graceful shutdown
+const server = app.listen(config.port, () => {
   logger.info(
     `Server running in ${config.nodeEnv} mode at http://localhost:${config.port}`
   );
 });
 
-// Graceful shutdown
-process.on("SIGTERM", () => {
-  logger.info("SIGTERM received. Shutting down gracefully...");
-  server.close(() => {
-    logger.info("Process terminated");
-  });
-});
+//
