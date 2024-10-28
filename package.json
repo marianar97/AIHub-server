@@ -2,10 +2,10 @@
   "name": "youtube-url-parser",
   "version": "1.0.0",
   "description": "Parse YouTube URLs",
-  "main": "index.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
   },
   "dependencies": {
     "axios": "^1.7.7",
