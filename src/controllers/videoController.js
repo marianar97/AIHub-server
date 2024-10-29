@@ -60,7 +60,6 @@ async function parseVideoHandler(req, res) {
 
     const videoData = await YouTubeService.checkVideoAccessibility(videoId);
 
-    console.log("Video data:", videoD);
     // Create new video document
     video = new Video({
       videoId,
