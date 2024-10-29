@@ -50,11 +50,9 @@ class YouTubeService {
       if (videoData.status.privacyStatus === "private") {
         throw new YouTubeError("Video is private", 403, "VIDEO_PRIVATE");
       }
-
       return {
-        exists: true,
         title: videoData.snippet.title,
-        author: videoData.snippet.channelTitle,
+        channelTitle: videoData.snippet.channelTitle,
         duration: formatDuration(videoData.contentDetails.duration),
         rawDuration: videoData.contentDetails.duration,
         thumbnails: videoData.snippet.thumbnails,

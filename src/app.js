@@ -18,6 +18,9 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Security middleware
+app.use(helmet());
 app.use(express.json({ limit: "10kb" }));
 
 // Rate limiting
