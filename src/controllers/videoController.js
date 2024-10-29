@@ -60,17 +60,6 @@ async function parseVideoHandler(req, res) {
 
     const videoData = await YouTubeService.checkVideoAccessibility(videoId);
 
-    videoD = {
-      videoId,
-      url,
-      tags,
-      title: videoData.title,
-      channelTitle: videoData.channelTitle,
-      duration: videoData.duration,
-      description: videoData.description,
-      embedUrl: `https://www.youtube.com/embed/${videoId}`,
-      thumbnails: videoData.thumbnails,
-    };
     console.log("Video data:", videoD);
     // Create new video document
     video = new Video({
@@ -121,4 +110,30 @@ async function parseVideoHandler(req, res) {
   }
 }
 
-module.exports = { parseVideoHandler };
+async function getVideos(req, res) {
+  try {
+    const videos = await Video.find({}).sort({ createdAt: -1 }).select("-__v");
+
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      message: "Videos retrieved successfully",
+      data: videos,
+      count: videos.length,
+    });
+  } catch (error) {
+    logger.error("Request handler error:", {
+      error: error.message,
+      stack: error.stack,
+    });
+
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: "Internal server error",
+      code: "INTERNAL_ERROR",
+    });
+  }
+}
+
+module.exports = { parseVideoHandler, getVideos };
